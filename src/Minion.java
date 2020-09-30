@@ -65,4 +65,9 @@ public class Minion {
             e.printStackTrace();
         }
     }
+
+    public static String crackThePassword() {
+        /* I stopped here */
+        return "";
+    }
 }
