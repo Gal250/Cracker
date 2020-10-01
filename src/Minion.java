@@ -8,7 +8,6 @@
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -18,47 +17,47 @@ public class Minion {
     static final String serverIP = "127.0.0.1"; // local host
 
     static Socket clientSocket;
-    static int MinionID = 0; // to check that it changes from one Minion to another
+    //static int MinionID = 0; // to check that it changes from one Minion to another
     static InputStream stream;
     static InputStreamReader reader;
     static BufferedReader buffered;
     static OutputStream out;
     static PrintStream printer;
     static String hashPassword;
-    //static int range;
+    static int range;
 
     public static void main(String args[]) throws NoSuchAlgorithmException {
         System.out.println("********* Minion *********");
-
         String realPassword;
 
         connectToMaster();
-        MinionID++; // the unique ID of the current Minion
-        // maybe to add a while loop
-        getInfoFromMaster();
-        realPassword = crackThePassword();
+        //MinionID++; // the unique ID of the current Minion
 
-        if(realPassword.equals("")) {
-            System.out.println("Password wasn't found");
-            printer.println("fail"); // write the result to the Master
+        while(true) { // maybe to add break if the password found by another Minion
+            getInfoFromMaster();
+            realPassword = crackThePassword();
+
+            if (realPassword.equals("")) {
+                System.out.println("Password wasn't found");
+                printer.println("fail"); // write the result to the Master
+            } else {
+                System.out.println("Password found!");
+                System.out.println("The password is " + realPassword);
+                // write the results to the Master
+                printer.println("success"); // to check if is suppose to be println or write
+                printer.println(realPassword);
+                break;
+            }
         }
-        else {
-            System.out.println("Password found!");
-            System.out.println("The password is" + realPassword);
-            // write the results to the Master
-            printer.println("success"); // to check if is suppose to be println or write
-            printer.println(realPassword);
-        }
 
-        // maybe need to add disconnection from the server
-
+        disconnectFromMaster();
     }
 
     // Getting connected to the server (Master)
     public static void connectToMaster() {
         try {
             clientSocket = new Socket(serverIP, portNumber);
-            System.out.println("System connection established\n");
+            System.out.println("System connection established");
 
             // for reading
             stream = clientSocket.getInputStream();
@@ -81,7 +80,7 @@ public class Minion {
         //String rangeString;
         try {
             hashPassword = buffered.readLine();
-            //range = Integer.parseInt(buffered.readLine());
+            range = Integer.parseInt(buffered.readLine());
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -98,13 +97,15 @@ public class Minion {
         // maybe to put in a function
         StringBuilder phonePrefix = new StringBuilder();
         StringBuilder phone = new StringBuilder();
-        phonePrefix.append("05");
-        phonePrefix.append(MinionID / 10);
-        phonePrefix.append("-");
-        phonePrefix.append(MinionID % 10);
+        phonePrefix.append("05"); // first two digits in the phone number from the left
+        //phonePrefix.append(MinionID / 10);
+        phonePrefix.append(range / 10); // third digit
+        //phonePrefix.append("-");
+        //phonePrefix.append(MinionID % 10);
+        phonePrefix.append(range % 10); // fourth digit
 
         // looking on range of million phone numbers
-        for(int i = 0; i <= 999999; i++) {
+        for(int i = 0; i <= 999999; i++) { // to change to macros as lower and upper bound
             phone.append(phonePrefix); // to check it's doesn't change the phoneNumber
             phoneSuffix = String.valueOf(i);
             while(phoneSuffix.length() != 6) { // to change 6 to macro
@@ -129,5 +130,18 @@ public class Minion {
         byte[] digest = md.digest();
         String MD5Hash = DatatypeConverter.printHexBinary(digest).toUpperCase();
         return MD5Hash;
+    }
+
+    // Getting connected to the server (Master)
+    public static void disconnectFromMaster() {
+        try {
+            clientSocket.close();
+            buffered.close();
+            printer.close();
+            System.out.println("Disconnecting from Master...");
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
