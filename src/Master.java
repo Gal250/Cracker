@@ -63,7 +63,10 @@ public class Master {
             BufferedReader buffered = new BufferedReader(new InputStreamReader(clientSocket.getInputStream())); // for reading
             PrintStream printer = new PrintStream(clientSocket.getOutputStream()); // for writing
             MinionHandler minion = new MinionHandler(clientSocket, minionID++, buffered, printer);
-            minion.run();
+            Thread thread = new Thread(minion);
+            minions.add(minion);
+            thread.start();
+            //minion.run();
         }
             //System.out.println("All passwords found!");
             //while(true) {}
@@ -96,13 +99,13 @@ public class Master {
         @Override
         public void run() {
             //System.out.println("range in run=" + range);
-            //while (true) {
+            while (true) {
                 range++;
                 if(foundPassword) {
                     indexHash++;
                     if(indexHash == hashPasswords.size())
-                        return;
-                        //break;
+                        //return;
+                        break;
                     hashPassword = hashPasswords.elementAt(indexHash);
                     range = 0;
                     foundPassword = false;
@@ -132,7 +135,7 @@ public class Master {
 
     }
 
-//}
+}
 
 
 
