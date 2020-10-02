@@ -53,7 +53,7 @@ public class Minion {
                 printer.println(realPassword);
             }
         }
-
+        System.out.println("I'm in the exit"); // to delete
         //disconnectFromMaster();
     }
 

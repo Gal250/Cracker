@@ -11,7 +11,7 @@ public class Master {
     static final int portNumber = 8080; // Master is listening on this port
     static String hashPassword;
     static int range; // used for determine a range of potential passwords
-    //static boolean foundPassword = false;
+    static boolean foundPassword = false;
     static Vector<MinionHandler> minions = new Vector<>();
     static Vector<String> hashPasswords = new Vector<>();
 
@@ -19,8 +19,19 @@ public class Master {
         System.out.println("********* Master *********");
         String line;
         int minionID = 0; // counter for Minions
+        //int range;
 
         ServerSocket serverSocket = new ServerSocket(portNumber);
+
+        int numOfMinions = Integer.parseInt(args[1]);
+        for(int i = 0; i < numOfMinions; i++) { // getting clients requests
+            Socket clientSocket = serverSocket.accept(); // accept the incoming request
+            BufferedReader buffered = new BufferedReader(new InputStreamReader(clientSocket.getInputStream())); // for reading
+            PrintStream printer = new PrintStream(clientSocket.getOutputStream()); // for writing
+            MinionHandler minion = new MinionHandler(clientSocket, minionID++, buffered, printer);
+            minions.add(minion);
+            //Thread thread = new Thread(minion);
+        }
 
         /* assumption: the name of the input file is given in the command line,
            and the file is located in the same directory as the program */
@@ -28,33 +39,25 @@ public class Master {
         try (BufferedReader br = new BufferedReader(file)) {
             while ((line = br.readLine()) != null) {
                 // read one hash from the file and try to crack it
-                //hashPassword = line;
-                //System.out.println("Hash password to crack: " + hashPassword);
-                hashPasswords.add(line);
-                //System.out.println("Hash password to crack: " + line);
-                //foundPassword = false;
+                hashPassword = line;
+                System.out.println("Hash password to crack: " + hashPassword);
+                foundPassword = false;
+                range = -1;
                 //range = 0;
-            }
-            // getting clients requests
-            //while (!foundPassword) {
-            //int numOfMinions = Integer.parseInt(args[1]);
-            while (true) {
-            //for(int i = 0; i < numOfMinions; i++) {
-                //System.out.println("Waiting for client response...\n");
-                Socket clientSocket = serverSocket.accept(); // accept the incoming request
-                BufferedReader buffered = new BufferedReader(new InputStreamReader(clientSocket.getInputStream())); // for reading
-                PrintStream printer = new PrintStream(clientSocket.getOutputStream()); // for writing
-                MinionHandler minion = new MinionHandler(clientSocket, minionID++, buffered, printer);
-                Thread thread = new Thread(minion);
-                minions.add(minion);
-                thread.start();
-                //minion.start();
-                //minion.run();
-                //System.out.println("foundPassword=" + foundPassword); // to delete
-                //}
-            }
 
-            //System.out.println("All passwords found! disconnecting...");
+                // getting clients requests
+                while (!foundPassword) {
+                    for(MinionHandler minion : minions) {
+                        minion.run();
+                        System.out.println("foundPassword=" + foundPassword); // to delete
+                        if(foundPassword)
+                            break;
+                    }
+                }
+            }
+            System.out.println("All passwords found!");
+            while(true) {}
+
 
         }
     }
@@ -62,7 +65,6 @@ public class Master {
 
     // A class for handling multiple Minions
     public static class MinionHandler implements Runnable {
-    //public static class MinionHandler implements Runnable {
         Socket clientSocket;
         int clientID;
         BufferedReader buffered;
@@ -84,62 +86,40 @@ public class Master {
         // overrides the run function in the Thread class
         @Override
         public void run() {
-            //int range;
-            boolean foundPassword;
-            //System.out.println("I'm in run");
-            for(String hashPassword : Master.hashPasswords) {
-                System.out.println("Hash password to crack: " + hashPassword);
-                //Master.range = -1;
-                foundPassword = false;
+            System.out.println("range in run=" + range);
+            range++;
                 //while (!foundPassword) {
-                    //for (MinionHandler minion : Master.minions) {
-                for(int i = clientID; i < 100; i+=Master.hashPasswords.size()) {
-                        //Master.range++;
-                        try {
-                            //System.out.println("Minion " + minion.clientID + " is running");
-                            //buffered = new BufferedReader(new InputStreamReader(clientSocket.getInputStream())); // for reading
-                            //printer = new PrintStream(clientSocket.getOutputStream()); // for writing
+                for(int i = range; i < 100; i+=Master.minions.size()) {
+                    try {
+                        //System.out.println("Minion " + minion.clientID + " is running");
+                        //buffered = new BufferedReader(new InputStreamReader(clientSocket.getInputStream())); // for reading
+                        //printer = new PrintStream(clientSocket.getOutputStream()); // for writing
 
-                            sendInfo = hashPassword + "\n" + i;
-                            printer.println(sendInfo);
-                            System.out.println("sent: hashPassword=" + hashPassword + ", range=" + range);
+                        System.out.println("minion size=" + Master.minions.size()); // to delete
+                        sendInfo = hashPassword + "\n" + i;
+                        printer.println(sendInfo);
+                        System.out.println("sent: hashPassword=" + hashPassword + ", range=" + i);
 
-                            /*sendInfo = hashPassword + "\n" + (++Master.range);
-                            printer.println(sendInfo);
-                            System.out.println("sent: hashPassword=" + hashPassword + ", range=" + range);*/
+                        /*sendInfo = hashPassword + "\n" + (++Master.range);
+                        printer.println(sendInfo);
+                        System.out.println("sent: hashPassword=" + hashPassword + ", range=" + range);*/
 
-                            receiveResult = buffered.readLine();
-                            if (!receiveResult.equals("fail")) {
-                                foundPassword = true;
-                                System.out.println("The password was cracked successfully");
-                                System.out.println("The original password is: " + receiveResult);
-                                System.out.println();
-                                // To make a function for this:
-                                /*clientSocket.close();
-                                buffered.close();
-                                printer.close();*/
-                                //toBreak = true;
-                                break;
-                                //running = false;
-                                //System.out.println("Disconnecting...");
-                            }
-                            // maybe to add else with informative failure message
+                        receiveResult = buffered.readLine();
+                        if (!receiveResult.equals("fail")) {
+                            foundPassword = true;
+                            System.out.println("The password was cracked successfully");
+                            System.out.println("The original password is: " + receiveResult);
+                            System.out.println();
+                            break;
                         }
-                        catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                        // maybe to add else with informative failure message
                     }
-                    /*if (toBreak)
-                        break;*/
+                    catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
-            //}
+            }
         }
-
-        // for stopping the thread
-        /*public void stop() {
-            running = false;
-        }*/
-
     }
 
 
@@ -189,4 +169,4 @@ public class Master {
 
 }*/
 
-}
+
