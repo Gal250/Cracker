@@ -7,7 +7,7 @@ import java.net.Socket;
 
 public class Master {
 
-    static final int portNumber = 8080;
+    static final int portNumber = 8080; // Master is listening on this port
     static String hashPassword;
     static int range = 0; // used for determine a range of potential passwords
 
@@ -15,9 +15,9 @@ public class Master {
     public static void main(String args[]) throws IOException {
         System.out.println("********* Master *********");
         String line;
-        /* here needs to get the hashes from the file.
-           Each Minion will get one hash.
-         */
+        int minionID = 0; // counter for Minions
+
+        ServerSocket serverSocket = new ServerSocket(portNumber);
 
         /* assumption: the name of the input file is given in the command line,
            and the file is located in the same directory as the program */
@@ -28,18 +28,16 @@ public class Master {
                 hashPassword = line;
                 System.out.println("Hash password to crack: " + hashPassword);
 
-                ServerSocket serverSocket = new ServerSocket(portNumber);
-                System.out.println("Waiting for client response...\n");
-
+                // getting clients requests
                 while(true) {
-                    Socket clientSocket =serverSocket.accept(); // ready to get communication on the socket
-                    MinionHandler minion = new MinionHandler(clientSocket);
+                    //System.out.println("Waiting for client response...\n");
+                    Socket clientSocket =serverSocket.accept(); // accept the incoming request
+                    MinionHandler minion = new MinionHandler(clientSocket, minionID++);
                     minion.start();
 
                 }
             }
         }
-
 
     }
 
@@ -47,42 +45,33 @@ public class Master {
     // A class for handling multiple Minions
     public static class MinionHandler extends Thread {
         Socket clientSocket;
-        //int clientID;
-        InputStream stream;
-        InputStreamReader reader;
+        int clientID;
         BufferedReader buffered;
-        OutputStream out;
         PrintStream printer;
         String sendInfo;
-        String recieveResult;
+        String receiveResult;
 
         // a builder
-        MinionHandler(Socket socket) {
+        MinionHandler(Socket socket, int id) {
             clientSocket = socket;
-            //clientID = id;
+            clientID = id;
         }
 
         // overrides the run function in the Thread class
         public void run() {
             try {
-                // starts accepting requests
-                stream = clientSocket.getInputStream(); // create an input stream from the socket
-                reader = new InputStreamReader(stream);
-                buffered = new BufferedReader(reader);
-                // now we can start reading requests // to delete note
-
-                // for writing
-                out = clientSocket.getOutputStream();
-                printer = new PrintStream(out);
+                System.out.println("Minion " + clientID + " is running");
+                buffered = new BufferedReader(new InputStreamReader(clientSocket.getInputStream())); // for reading
+                printer = new PrintStream(clientSocket.getOutputStream()); // for writing
 
                 sendInfo = range + "\n" + hashPassword;
                 printer.println(sendInfo);
                 range++;
 
-                recieveResult = buffered.readLine();
-                if(!recieveResult.equals("")) {
+                receiveResult = buffered.readLine();
+                if(!receiveResult.equals("")) {
                     System.out.println("The password was cracked successfully");
-                    System.out.println("The original password is: " + recieveResult);
+                    System.out.println("The original password is: " + receiveResult);
                     // To make a function for this:
                     clientSocket.close();
                     buffered.close();

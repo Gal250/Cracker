@@ -5,7 +5,7 @@ import java.security.NoSuchAlgorithmException;
 public class MainAux {
 
     // The function gets a password (phone number), and calculates its MD5 hash
-    /*public String calculateMD5(String password)
+    /*public static String calculateMD5(String password)
         throws NoSuchAlgorithmException {
             MessageDigest md = MessageDigest.getInstance("MD5");
             md.update(password.getBytes()); // to add ASCII or UTF-8?

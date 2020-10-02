@@ -17,7 +17,7 @@ public class Minion {
     static final String serverIP = "127.0.0.1"; // local host
 
     static Socket clientSocket;
-    //static int MinionID = 0; // to check that it changes from one Minion to another
+    //static int MinionID; // to check that it changes from one Minion to another
     static InputStream stream;
     static InputStreamReader reader;
     static BufferedReader buffered;
