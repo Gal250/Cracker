@@ -15,6 +15,7 @@ public class Minion {
 
     static final int portNumber = 8080;
     static final String serverIP = "127.0.0.1"; // local host
+    static boolean running = true;
 
     static Socket clientSocket;
     //static int MinionID; // to check that it changes from one Minion to another
@@ -26,7 +27,7 @@ public class Minion {
     static String hashPassword;
     static int range;
 
-    public static void main(String args[]) throws NoSuchAlgorithmException {
+    public static void main(String []args) throws NoSuchAlgorithmException {
         System.out.println("********* Minion *********");
         String realPassword;
 
@@ -34,7 +35,11 @@ public class Minion {
         //MinionID++; // the unique ID of the current Minion
 
         while(true) { // maybe to add break if the password found by another Minion
+            System.out.println("start iteration"); // to delete
             getInfoFromMaster();
+            if(!running)
+                break;
+
             realPassword = crackThePassword();
 
             if (realPassword.equals("")) {
@@ -42,15 +47,14 @@ public class Minion {
                 printer.println("fail"); // write the result to the Master
             } else {
                 System.out.println("Password found!");
-                System.out.println("The password is " + realPassword);
+                System.out.println("The password is: " + realPassword);
                 // write the results to the Master
-                printer.println("success"); // to check if is suppose to be println or write
+                //printer.println("success! the password is: " + realPassword); // to check if is suppose to be println or write
                 printer.println(realPassword);
-                break;
             }
         }
 
-        disconnectFromMaster();
+        //disconnectFromMaster();
     }
 
     // Getting connected to the server (Master)
@@ -77,12 +81,18 @@ public class Minion {
     }
 
     public static void getInfoFromMaster() {
-        //String rangeString;
         try {
             hashPassword = buffered.readLine();
+            System.out.println("hashPassword=" + hashPassword); // to delete
+            if(hashPassword == null) {
+                running = false;
+                return;
+            }
             range = Integer.parseInt(buffered.readLine());
+            System.out.println("range=" + range); // to delete
         }
         catch (IOException e) {
+            System.out.println("I'm in catch"); // to delete
             e.printStackTrace();
         }
     }
@@ -96,21 +106,22 @@ public class Minion {
         String phoneSuffix, phoneNumber, hashPhoneNumber;
         // maybe to put in a function
         StringBuilder phonePrefix = new StringBuilder();
-        StringBuilder phone = new StringBuilder();
         phonePrefix.append("05"); // first two digits in the phone number from the left
-        //phonePrefix.append(MinionID / 10);
         phonePrefix.append(range / 10); // third digit
-        //phonePrefix.append("-");
-        //phonePrefix.append(MinionID % 10);
         phonePrefix.append(range % 10); // fourth digit
+        //System.out.println("phonePrefix= " + phonePrefix.toString()); // to delete
 
         // looking on range of million phone numbers
         for(int i = 0; i <= 999999; i++) { // to change to macros as lower and upper bound
+            StringBuilder phone = new StringBuilder();
             phone.append(phonePrefix); // to check it's doesn't change the phoneNumber
+            //System.out.println("phone= " + phone.toString()); // to delete
             phoneSuffix = String.valueOf(i);
             while(phoneSuffix.length() != 6) { // to change 6 to macro
                 phoneSuffix = "0" + phoneSuffix; // add zeros in the prefix of phoneSuffix
             }
+            System.out.println("range= " + range); // to delete
+            //System.out.println("phoneSuffix= " + phoneSuffix); // to delete
             phone.append(phoneSuffix);
             phoneNumber = phone.toString();
             // now we have specific phone number is in the shape of: 05X-XXXXXXX
@@ -118,8 +129,10 @@ public class Minion {
             hashPhoneNumber = calculateMD5(phoneNumber); // convert the phone number to MD5 hash
             System.out.println("the hash of the phone number : " + hashPhoneNumber); // to delete
 
-            if(hashPhoneNumber.equals(hashPassword)) // check if the hash we got equals to the given hash
+            if(hashPhoneNumber.equals(hashPassword)) { // check if the hash we got equals to the given hash
+                System.out.println("equals"); // to delete
                 return phoneNumber;
+            }
         }
         return "";
     }
