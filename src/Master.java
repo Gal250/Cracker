@@ -4,7 +4,6 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.Vector;
 
 public class Master {
@@ -13,11 +12,9 @@ public class Master {
     static String hashPassword; // the current hash that the minions are trying to crack
     static int range; // used to determine a range of potential passwords
     static boolean foundPassword = false; // true if the current hash was cracked, false otherwise
-    //static Vector<MinionHandler> minions = new Vector<>();
-    static Vector<String> hashPasswords = new Vector<>(); // store all the hashes from the input file
-    static int indexHash = 0; // the index of the current hash
+    static Vector<String> hashPasswords = new Vector<>(); // stores all the hashes from the input file
+    static int indexHash = 0; // the index of the current hash in the vector
     static boolean toBreak = false; // true if all the passwords were cracked, false otherwise
-    //static ServerSocket serverSocket;
 
     public static void main(String []args) throws IOException {
         System.out.println("********* Master *********");
@@ -25,7 +22,6 @@ public class Master {
         int minionID = 0; // counter for Minions
 
         ServerSocket serverSocket = new ServerSocket(portNumber);
-        //serverSocket = new ServerSocket(portNumber);
 
         /* assumption: the name of the input file is given in the command line,
            and the file is located in the same directory as the program */
@@ -33,7 +29,6 @@ public class Master {
         try (BufferedReader br = new BufferedReader(file)) {
             while ((line = br.readLine()) != null) {
                 // read a hash from the file and add it to the hashes vector
-                //System.out.println("Hash password to the vector: " + line);
                 hashPasswords.add(line);
             }
         }
@@ -46,11 +41,10 @@ public class Master {
             printer = new PrintStream(clientSocket.getOutputStream()); // for writing
             MinionHandler minion = new MinionHandler(clientSocket, minionID++, buffered, printer); // create a new minion
             Thread thread = new Thread(minion);
-            //minions.add(minion); // add the new minion to the minions vector
             thread.start();
         }
         System.out.println("All passwords were cracked!");
-        closeMaster(serverSocket, buffered, printer); // to check that these are not pointers
+        closeMaster(serverSocket, buffered, printer);
     }
 
     public static void closeMaster(ServerSocket serverSocket, BufferedReader buffered, PrintStream printer) throws IOException {
@@ -94,10 +88,7 @@ public class Master {
                     foundPassword = false;
                 }
 
-                sendInfo = hashPassword + "\n" + range;
-                printer.println(sendInfo);
-                System.out.println("sending to Minion " + clientID +" the hashPassword: " + hashPassword + ", trial number: " + range);
-
+                sendingInfo();
                 try {
                     receiveResult = buffered.readLine();
                 }
@@ -110,15 +101,10 @@ public class Master {
                         ioException.printStackTrace();
                     }
                 }
-                /*catch (IOException e) {
-                    e.printStackTrace();
-                }*/
 
                 if (!receiveResult.equals("fail")) {
                     foundPassword = true;
-                    System.out.println("Password " + (indexHash+1) +" was cracked successfully by Minion " + clientID);
-                    System.out.println("The original password is: " + receiveResult);
-                    System.out.println();
+                    printingResults(receiveResult);
                 }
             }
             try {
@@ -128,9 +114,18 @@ public class Master {
                 e.printStackTrace();
             }
         }
+
+        public void sendingInfo() {
+            sendInfo = hashPassword + "\n" + range;
+            printer.println(sendInfo);
+            System.out.println("sending to Minion " + clientID +" the hashPassword: " + hashPassword + ", trial number: " + range);
+        }
+
+        public void printingResults(String receiveResult) {
+            System.out.println("Password " + (indexHash+1) +" was cracked successfully by Minion " + clientID);
+            System.out.println("The original password is: " + receiveResult + "\n");
+        }
     }
 }
-
-
 
 

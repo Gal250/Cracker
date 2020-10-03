@@ -31,7 +31,7 @@ public class Minion {
     private static final int numOfDigits = 6;
 
 
-    public static void main(String []args) throws NoSuchAlgorithmException, IOException {
+    public static void main(String []args) throws NoSuchAlgorithmException {
         System.out.println("********* Minion *********");
         String realPassword;
 
@@ -73,7 +73,7 @@ public class Minion {
         }
     }
 
-    public static void getInfoFromMaster() throws IOException {
+    public static void getInfoFromMaster() {
         try {
             hashPassword = buffered.readLine();
             if(hashPassword == null) {
@@ -106,13 +106,13 @@ public class Minion {
             phone.append(phonePrefix); // adding the prefix of the phone
             phoneSuffix = createPhoneSuffix(i);
             phone.append(phoneSuffix); // adding the suffix of the phone
-            phoneNumber = phone.toString();
-            // now we have specific phone number is in the shape of: 05XXXXXXXX
+
+            phoneNumber = phone.toString(); // now we have specific phone number is in the shape of: 05XXXXXXXX
+
             if(i == lowerBound)
                 System.out.println("start checking from: " + phoneNumber);
+
             hashPhoneNumber = calculateMD5(phoneNumber); // convert the phone number to MD5 hash
-            //System.out.println("checking the phone number: " + phoneNumber); // to delete
-            //System.out.println("the hash of the phone number : " + hashPhoneNumber); // to delete
 
             if(hashPhoneNumber.equals(hashPassword)) { // check if the hash we got equals to the given hash
                 return phoneNumber;
