@@ -15,13 +15,20 @@ public class Minion {
 
     static final int portNumber = 8080;
     static final String serverIP = "127.0.0.1"; // local host
-    static boolean running = true;
+    static boolean running = true; // a boolean flag to stop the thread
 
+    // check if suppose to be static or not
     static Socket clientSocket;
     static BufferedReader buffered;
     static PrintStream printer;
     static String hashPassword;
     static int range;
+
+    // constants
+    private static final int lowerBound = 0;
+    private static final int upperBound = 999999;
+    private static final int numOfDigits = 6;
+
 
     public static void main(String []args) throws NoSuchAlgorithmException {
         System.out.println("********* Minion *********");
@@ -39,16 +46,15 @@ public class Minion {
             realPassword = crackThePassword();
 
             if (realPassword.equals("")) {
-                System.out.println("Password wasn't found");
+                System.out.println("Password wasn't found\n");
                 printer.println("fail"); // write the result to the Master
-            } else {
+            }
+            else {
                 System.out.println("Password found!");
-                System.out.println("The password is: " + realPassword);
-                // write the results to the Master
-                printer.println(realPassword);
+                System.out.println("The password is: " + realPassword + "\n");
+                printer.println(realPassword); // write the result to the Master
             }
         }
-        //System.out.println("I'm in the exit"); // to delete
         disconnectFromMaster();
     }
 
@@ -70,16 +76,13 @@ public class Minion {
         try {
             hashPassword = buffered.readLine();
             if(hashPassword == null) {
-                //System.out.println("hashPassword is null");
                 running = false;
                 return;
             }
-            System.out.println("hashPassword=" + hashPassword); // to delete
+            System.out.println("received the hashPassword: " + hashPassword + "\n");
             range = Integer.parseInt(buffered.readLine());
-            System.out.println("range=" + range); // to delete
         }
         catch (IOException e) {
-            System.out.println("I'm in catch"); // to delete
             e.printStackTrace();
         }
     }
@@ -91,34 +94,47 @@ public class Minion {
      */
     public static String crackThePassword() throws NoSuchAlgorithmException {
         String phoneSuffix, phoneNumber, hashPhoneNumber;
-        // maybe to put in a function - phonePrefix
-        StringBuilder phonePrefix = new StringBuilder();
-        phonePrefix.append("05"); // first two digits in the phone number from the left
-        phonePrefix.append(range / 10); // third digit
-        phonePrefix.append(range % 10); // fourth digit
+        StringBuilder phonePrefix = createPhonePrefix();
 
-        // looking on range of million phone numbers
-        for(int i = 0; i <= 999999; i++) { // to change to macros as lower and upper bound
+        // looking on a range of phone numbers
+        for(int i = lowerBound; i <= upperBound; i++) {
             StringBuilder phone = new StringBuilder();
-            phone.append(phonePrefix);
-            phoneSuffix = String.valueOf(i);
-            while(phoneSuffix.length() != 6) { // to change 6 to macro
-                phoneSuffix = "0" + phoneSuffix; // add zeros in the prefix of phoneSuffix
-            }
-            //System.out.println("range= " + range); // to delete
-            phone.append(phoneSuffix);
+            phone.append(phonePrefix); // adding the prefix of the phone
+            phoneSuffix = createPhoneSuffix(i);
+            phone.append(phoneSuffix); // adding the suffix of the phone
             phoneNumber = phone.toString();
-            // now we have specific phone number is in the shape of: 05X-XXXXXXX
-            System.out.println("checking the phone number: " + phoneNumber); // to delete
+            // now we have specific phone number is in the shape of: 05XXXXXXXX
+            if(i == lowerBound)
+                System.out.println("start checking from: " + phoneNumber);
             hashPhoneNumber = calculateMD5(phoneNumber); // convert the phone number to MD5 hash
-            System.out.println("the hash of the phone number : " + hashPhoneNumber); // to delete
+            //System.out.println("checking the phone number: " + phoneNumber); // to delete
+            //System.out.println("the hash of the phone number : " + hashPhoneNumber); // to delete
 
             if(hashPhoneNumber.equals(hashPassword)) { // check if the hash we got equals to the given hash
-                System.out.println("found a match"); // to delete
                 return phoneNumber;
             }
+            if(i == upperBound)
+                System.out.println("finished checking " + (upperBound+1) + " phone numbers and stopped at: " + phoneNumber);
         }
         return "";
+    }
+
+    // create the prefix of a phone number according to the range, in the shape of: 05XX
+    public static StringBuilder createPhonePrefix() {
+        StringBuilder phonePrefix = new StringBuilder();
+        phonePrefix.append("05"); // first two digits of the phone number from the left
+        phonePrefix.append(range / 10); // third digit
+        phonePrefix.append(range % 10); // fourth digit
+        return phonePrefix;
+    }
+
+    // create the suffix (6 last digits) of a phone number according to the range
+    public static String createPhoneSuffix(int digits) {
+        String phoneSuffix = String.valueOf(digits);
+        while(phoneSuffix.length() != numOfDigits) {
+            phoneSuffix = "0" + phoneSuffix; // add zeros in the beginning of phoneSuffix
+        }
+        return phoneSuffix;
     }
 
     public static String calculateMD5(String password) throws NoSuchAlgorithmException {

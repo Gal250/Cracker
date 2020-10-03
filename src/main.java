@@ -17,7 +17,7 @@ public class main {
 
     // to delete
     public static void main(String[] args) throws NoSuchAlgorithmException {
-        String phoneNumber = "0501234567";
+        String phoneNumber = "0549999999";
         String hash = calculateMD5(phoneNumber);
         System.out.println("hash: " + hash);
 
