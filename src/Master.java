@@ -15,6 +15,7 @@ public class Master {
     static Vector<MinionHandler> minions = new Vector<>();
     static Vector<String> hashPasswords = new Vector<>();
     static int indexHash = 0;
+    static boolean toBreak = false;
 
     public static void main(String []args) throws IOException {
         System.out.println("********* Master *********");
@@ -58,7 +59,7 @@ public class Master {
                 }*/
         hashPassword = hashPasswords.elementAt(0);
         range = -1;
-        while(true) {
+        while(!toBreak) {
             Socket clientSocket = serverSocket.accept(); // accept the incoming request
             BufferedReader buffered = new BufferedReader(new InputStreamReader(clientSocket.getInputStream())); // for reading
             PrintStream printer = new PrintStream(clientSocket.getOutputStream()); // for writing
@@ -66,12 +67,9 @@ public class Master {
             Thread thread = new Thread(minion);
             minions.add(minion);
             thread.start();
-            //minion.run();
         }
-            //System.out.println("All passwords found!");
-            //while(true) {}
-
-
+        System.out.println("All passwords were cracked!");
+        serverSocket.close();
     }
 
 
@@ -98,22 +96,22 @@ public class Master {
 
         @Override
         public void run() {
-            //System.out.println("range in run=" + range);
-            while (true) {
+            //while (true) {
+            while (!toBreak) {
                 range++;
                 if(foundPassword) {
                     indexHash++;
-                    if(indexHash == hashPasswords.size())
-                        //return;
+                    if(indexHash == hashPasswords.size()) {
+                        toBreak = true;
                         break;
+                    }
                     hashPassword = hashPasswords.elementAt(indexHash);
                     range = 0;
                     foundPassword = false;
                 }
-                //System.out.println("minion size=" + Master.minions.size()); // to delete
                 sendInfo = hashPassword + "\n" + range;
                 printer.println(sendInfo);
-                System.out.println("sent to Minion " + clientID +": hashPassword=" + hashPassword + ", range=" + range);
+                System.out.println("sending to Minion " + clientID +" the hashPassword:" + hashPassword + ", range:" + range);
 
                 try {
                     receiveResult = buffered.readLine();
@@ -123,13 +121,20 @@ public class Master {
                 }
                 if (!receiveResult.equals("fail")) {
                     foundPassword = true;
-                    System.out.println("The password was cracked successfully");
+                    System.out.println("Password " + (indexHash+1) +" was cracked successfully by Minion " + clientID);
                     System.out.println("The original password is: " + receiveResult);
                     System.out.println();
                     //break;
                 }
                 // maybe to add else with informative failure message
             }
+            try {
+                this.clientSocket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            //System.out.println("All passwords found!");
 
         }
 
