@@ -8,6 +8,7 @@
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -30,7 +31,7 @@ public class Minion {
     private static final int numOfDigits = 6;
 
 
-    public static void main(String []args) throws NoSuchAlgorithmException {
+    public static void main(String []args) throws NoSuchAlgorithmException, IOException {
         System.out.println("********* Minion *********");
         String realPassword;
 
@@ -39,7 +40,7 @@ public class Minion {
         while(true) { // maybe to add break if the password found by another Minion
             getInfoFromMaster();
             if(!running) {
-                System.out.println("All passwords were cracked");
+                //System.out.println("All passwords were cracked");
                 break;
             }
 
@@ -72,7 +73,7 @@ public class Minion {
         }
     }
 
-    public static void getInfoFromMaster() {
+    public static void getInfoFromMaster() throws IOException {
         try {
             hashPassword = buffered.readLine();
             if(hashPassword == null) {
@@ -81,6 +82,9 @@ public class Minion {
             }
             System.out.println("received the hashPassword: " + hashPassword + "\n");
             range = Integer.parseInt(buffered.readLine());
+        }
+        catch (SocketException e) { // handling with master crashing
+            running = false;
         }
         catch (IOException e) {
             e.printStackTrace();

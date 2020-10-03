@@ -4,6 +4,7 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.Vector;
 
 public class Master {
@@ -16,6 +17,7 @@ public class Master {
     static Vector<String> hashPasswords = new Vector<>(); // store all the hashes from the input file
     static int indexHash = 0; // the index of the current hash
     static boolean toBreak = false; // true if all the passwords were cracked, false otherwise
+    //static ServerSocket serverSocket;
 
     public static void main(String []args) throws IOException {
         System.out.println("********* Master *********");
@@ -23,6 +25,7 @@ public class Master {
         int minionID = 0; // counter for Minions
 
         ServerSocket serverSocket = new ServerSocket(portNumber);
+        //serverSocket = new ServerSocket(portNumber);
 
         /* assumption: the name of the input file is given in the command line,
            and the file is located in the same directory as the program */
@@ -90,16 +93,27 @@ public class Master {
                     range = 0;
                     foundPassword = false;
                 }
+
                 sendInfo = hashPassword + "\n" + range;
                 printer.println(sendInfo);
-                System.out.println("sending to Minion " + clientID +" the hashPassword:" + hashPassword + ", trial number" + range);
+                System.out.println("sending to Minion " + clientID +" the hashPassword: " + hashPassword + ", trial number: " + range);
 
                 try {
                     receiveResult = buffered.readLine();
                 }
-                catch (IOException e) {
-                    e.printStackTrace();
+                catch (IOException e) { // handling with minion crashing
+                    try {
+                        this.clientSocket.close();
+                        range--;
+                        break;
+                    } catch (IOException ioException) {
+                        ioException.printStackTrace();
+                    }
                 }
+                /*catch (IOException e) {
+                    e.printStackTrace();
+                }*/
+
                 if (!receiveResult.equals("fail")) {
                     foundPassword = true;
                     System.out.println("Password " + (indexHash+1) +" was cracked successfully by Minion " + clientID);
