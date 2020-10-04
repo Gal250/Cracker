@@ -21,7 +21,6 @@ public class Minion {
     static final int upperBound = 999999;
     static final int numOfDigits = 6;
 
-    static Socket clientSocket;
     static BufferedReader buffered;
     static PrintStream printer;
     static String hashPassword;
@@ -29,11 +28,12 @@ public class Minion {
     static boolean running = true; // a boolean flag to stop the thread
 
 
-    public static void main(String []args) throws NoSuchAlgorithmException {
+    public static void main(String []args) throws NoSuchAlgorithmException, IOException {
         System.out.println("********* Minion *********");
         String realPassword;
 
-        connectToMaster();
+        Socket clientSocket = new Socket(serverIP, portNumber);
+        connectToMaster(clientSocket);
 
         while(true) {
             getInfoFromMaster();
@@ -52,15 +52,13 @@ public class Minion {
                 printer.println(realPassword); // write the result to the Master
             }
         }
-        disconnectFromMaster();
+        disconnectFromMaster(clientSocket);
     }
 
     // Getting connected to the server (Master)
-    public static void connectToMaster() {
+    public static void connectToMaster(Socket clientSocket) {
         try {
-            clientSocket = new Socket(serverIP, portNumber);
             System.out.println("System connection established");
-
             buffered = new BufferedReader(new InputStreamReader(clientSocket.getInputStream())); // for reading
             printer = new PrintStream(clientSocket.getOutputStream()); // for writing
         }
@@ -148,7 +146,7 @@ public class Minion {
     }
 
     // Getting disconnected from the server (Master)
-    public static void disconnectFromMaster() {
+    public static void disconnectFromMaster(Socket clientSocket) {
         try {
             clientSocket.close();
             buffered.close();
