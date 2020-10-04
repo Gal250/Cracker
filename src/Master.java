@@ -18,7 +18,7 @@ public class Master {
 
     public static void main(String []args) throws IOException {
         System.out.println("********* Master *********");
-        String line; BufferedReader buffered = null; PrintStream printer = null;
+        String line; BufferedReader buffered = null; PrintStream printer = null; boolean validInput = true;
         int minionID = 0; // counter for Minions
 
         ServerSocket serverSocket = new ServerSocket(portNumber);
@@ -29,22 +29,40 @@ public class Master {
         try (BufferedReader br = new BufferedReader(file)) {
             while ((line = br.readLine()) != null) {
                 // read a hash from the file and add it to the hashes vector
+                if(!isValidInput(line)) {
+                    System.out.println("The input is invalid, please correct and try again");
+                    validInput = false;
+                    break;
+                }
                 hashPasswords.add(line);
             }
         }
-        hashPassword = hashPasswords.elementAt(0);
-        range = -1;
+        if(validInput) {
+            hashPassword = hashPasswords.elementAt(0);
+            range = -1;
 
-        while(!toBreak) {
-            Socket clientSocket = serverSocket.accept(); // accept the incoming request
-            buffered = new BufferedReader(new InputStreamReader(clientSocket.getInputStream())); // for reading
-            printer = new PrintStream(clientSocket.getOutputStream()); // for writing
-            MinionHandler minion = new MinionHandler(clientSocket, minionID++, buffered, printer); // create a new minion
-            Thread thread = new Thread(minion);
-            thread.start();
+            while (!toBreak) {
+                Socket clientSocket = serverSocket.accept(); // accept the incoming request
+                buffered = new BufferedReader(new InputStreamReader(clientSocket.getInputStream())); // for reading
+                printer = new PrintStream(clientSocket.getOutputStream()); // for writing
+                MinionHandler minion = new MinionHandler(clientSocket, minionID++, buffered, printer); // create a new minion
+                Thread thread = new Thread(minion);
+                thread.start();
+            }
+            System.out.println("All passwords were cracked!");
         }
-        System.out.println("All passwords were cracked!");
         closeMaster(serverSocket, buffered, printer);
+    }
+
+    public static boolean isValidInput(String hash) {
+        int len = hash.length();
+        if(len != 32)
+            return false;
+        for(int i = 0; i < len; i++) {
+            if(Character.digit(hash.charAt(i), 16) == -1) // check if the hash is in hexadecimal
+                return false;
+        }
+        return true;
     }
 
     public static void closeMaster(ServerSocket serverSocket, BufferedReader buffered, PrintStream printer) throws IOException {
@@ -118,11 +136,11 @@ public class Master {
         public void sendingInfo() {
             sendInfo = hashPassword + "\n" + range;
             printer.println(sendInfo);
-            System.out.println("sending to Minion " + clientID +" the hashPassword: " + hashPassword + ", trial number: " + range);
+            System.out.println("Sending hash " + (indexHash+1) + " to Minion " + clientID + ", range number: " + range);
         }
 
         public void printingResults(String receiveResult) {
-            System.out.println("Password " + (indexHash+1) +" was cracked successfully by Minion " + clientID);
+            System.out.println("Hash " + (indexHash+1) +" was cracked successfully by Minion " + clientID);
             System.out.println("The original password is: " + receiveResult + "\n");
         }
     }

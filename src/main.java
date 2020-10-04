@@ -17,7 +17,11 @@ public class main {
 
     // to delete
     public static void main(String[] args) throws NoSuchAlgorithmException {
-        String phoneNumber = "0549999999";
+        /*char c = 'E';
+        int digit = Character.digit(c, 16);
+        System.out.println("digit= " + digit);*/
+
+        String phoneNumber = "0519998765";
         String hash = calculateMD5(phoneNumber);
         System.out.println("hash: " + hash);
 

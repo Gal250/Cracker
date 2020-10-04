@@ -14,9 +14,12 @@ import java.security.NoSuchAlgorithmException;
 
 public class Minion {
 
+    // constants
     static final int portNumber = 8080;
     static final String serverIP = "127.0.0.1"; // local host
-    static boolean running = true; // a boolean flag to stop the thread
+    static final int lowerBound = 0;
+    static final int upperBound = 999999;
+    static final int numOfDigits = 6;
 
     // check if suppose to be static or not
     static Socket clientSocket;
@@ -24,16 +27,13 @@ public class Minion {
     static PrintStream printer;
     static String hashPassword;
     static int range;
-
-    // constants
-    private static final int lowerBound = 0;
-    private static final int upperBound = 999999;
-    private static final int numOfDigits = 6;
+    static boolean running = true; // a boolean flag to stop the thread
 
 
     public static void main(String []args) throws NoSuchAlgorithmException {
         System.out.println("********* Minion *********");
         String realPassword;
+        //Socket clientSocket;
 
         connectToMaster();
 
