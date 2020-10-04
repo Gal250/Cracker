@@ -1,5 +1,7 @@
-/* My implementation is based on Client-Server Programming.
-   This class represents the Server */
+/* My implementation is based on a Client-Server Programming.
+   This class represents the Server.
+   The Master reads the input file, gets requests from available Minions
+   and divides the the cracking workload between them. */
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -27,8 +29,7 @@ public class Master {
            and the file is located in the same directory as the program */
         FileReader file = new FileReader(args[0]);
         try (BufferedReader br = new BufferedReader(file)) {
-            while ((line = br.readLine()) != null) {
-                // read a hash from the file and add it to the hashes vector
+            while ((line = br.readLine()) != null) { // read a hash from the file and add it to the hashes vector
                 if(!isValidInput(line)) {
                     System.out.println("The input is invalid, please correct and try again");
                     validInput = false;
@@ -54,17 +55,19 @@ public class Master {
         closeMaster(serverSocket, buffered, printer);
     }
 
+    // check if a hash given in the input file is valid, i.e has 32 characters, and is in hexadecimal
     public static boolean isValidInput(String hash) {
         int len = hash.length();
         if(len != 32)
             return false;
         for(int i = 0; i < len; i++) {
-            if(Character.digit(hash.charAt(i), 16) == -1) // check if the hash is in hexadecimal
+            if(Character.digit(hash.charAt(i), 16) == -1) // check if hex
                 return false;
         }
         return true;
     }
 
+    // close the master and disconnect
     public static void closeMaster(ServerSocket serverSocket, BufferedReader buffered, PrintStream printer) throws IOException {
         if(buffered != null)
             buffered.close();
@@ -133,12 +136,14 @@ public class Master {
             }
         }
 
+        // send to minion the current hash to crack and a new range to search in
         public void sendingInfo() {
             sendInfo = hashPassword + "\n" + range;
             printer.println(sendInfo);
             System.out.println("Sending hash " + (indexHash+1) + " to Minion " + clientID + ", range number: " + range);
         }
 
+        // print a successful result to the master
         public void printingResults(String receiveResult) {
             System.out.println("Hash " + (indexHash+1) +" was cracked successfully by Minion " + clientID);
             System.out.println("The original password is: " + receiveResult + "\n");

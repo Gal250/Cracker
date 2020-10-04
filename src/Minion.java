@@ -1,6 +1,6 @@
-/* My implementation is based on Client-Server Programming.
+/* My implementation is based on a Client-Server Programming.
    This class represents a Client worker - Minion.
-   Each Minion gets a hash and a range of potential passwords (phone numbers) from the Master.
+   When a Minion is available, it gets a hash and a range of potential passwords (phone numbers) from the Master.
    It converts the potential passwords into MD5 hashes, and then compares them to the given hash.
    If there is a match, it returns the original password (the phone number).
 */
@@ -21,7 +21,6 @@ public class Minion {
     static final int upperBound = 999999;
     static final int numOfDigits = 6;
 
-    // check if suppose to be static or not
     static Socket clientSocket;
     static BufferedReader buffered;
     static PrintStream printer;
@@ -33,16 +32,13 @@ public class Minion {
     public static void main(String []args) throws NoSuchAlgorithmException {
         System.out.println("********* Minion *********");
         String realPassword;
-        //Socket clientSocket;
 
         connectToMaster();
 
-        while(true) { // maybe to add break if the password found by another Minion
+        while(true) {
             getInfoFromMaster();
-            if(!running) {
-                //System.out.println("All passwords were cracked");
+            if(!running)
                 break;
-            }
 
             realPassword = crackThePassword();
 
@@ -73,10 +69,11 @@ public class Minion {
         }
     }
 
+    // get a hash to crack and a range a phones to search in
     public static void getInfoFromMaster() {
         try {
             hashPassword = buffered.readLine();
-            if(hashPassword == null) {
+            if(hashPassword == null) { // no more hashes left to crack
                 running = false;
                 return;
             }
@@ -141,6 +138,7 @@ public class Minion {
         return phoneSuffix;
     }
 
+    // the function gets a password (phone number) and returns its MD5 hash
     public static String calculateMD5(String password) throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance("MD5");
         md.update(password.getBytes());
